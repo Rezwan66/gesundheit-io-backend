@@ -1,6 +1,8 @@
 import express, { Application, Request, Response } from 'express';
 import { prisma } from './app/lib/prisma';
 import { IndexRoutes } from './app/routes';
+import { globalErrorHandler } from './app/middleware/globalErrorHandler';
+import { notFound } from './app/middleware/notFound';
 
 const app: Application = express();
 
@@ -18,7 +20,7 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello, TypeScript + Express!');
 });
 
-// Basic route
+// Test DB
 app.get('/db-test', async (req: Request, res: Response) => {
   const specialty = await prisma.specialty.create({
     data: {
@@ -31,5 +33,10 @@ app.get('/db-test', async (req: Request, res: Response) => {
     data: specialty,
   });
 });
+
+// Global Error Handler
+app.use(globalErrorHandler);
+// Not Found Route
+app.use(notFound);
 
 export default app;
