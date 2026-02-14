@@ -3,6 +3,7 @@ import { UserStatus } from '../../../generated/prisma/enums';
 import AppError from '../../errorHelpers/AppError';
 import { auth } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
+import { tokenUtils } from '../../utils/token';
 
 interface IRegisterPatientPayload {
   name: string;
@@ -41,7 +42,27 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
       return patientTx;
     });
 
-    return { ...data, patient };
+    const accessToken = tokenUtils.getAccessToken({
+      userId: data.user.id,
+      role: data.user.role,
+      name: data.user.name,
+      email: data.user.email,
+      status: data.user.status,
+      isDeleted: data.user.isDeleted,
+      emailVerified: data.user.emailVerified,
+    });
+
+    const refreshToken = tokenUtils.getRefreshToken({
+      userId: data.user.id,
+      role: data.user.role,
+      name: data.user.name,
+      email: data.user.email,
+      status: data.user.status,
+      isDeleted: data.user.isDeleted,
+      emailVerified: data.user.emailVerified,
+    });
+
+    return { ...data, accessToken, refreshToken, patient };
   } catch (error) {
     console.log('Transaction error :', error);
     await prisma.user.delete({
@@ -78,7 +99,30 @@ const loginUser = async (payload: ILoginUserPayload) => {
     throw new AppError(status.NOT_FOUND, 'User is deleted');
   }
 
-  return data;
+  // Token-related logic
+  // Access token has a short expiry time (e.g., 1 day) and is used for authenticating API requests.
+  // Refresh token has a longer expiry time (e.g., 7 days) and is used to obtain new access tokens without requiring the user to log in again.
+  const accessToken = tokenUtils.getAccessToken({
+    userId: data.user.id,
+    role: data.user.role,
+    name: data.user.name,
+    email: data.user.email,
+    status: data.user.status,
+    isDeleted: data.user.isDeleted,
+    emailVerified: data.user.emailVerified,
+  });
+
+  const refreshToken = tokenUtils.getRefreshToken({
+    userId: data.user.id,
+    role: data.user.role,
+    name: data.user.name,
+    email: data.user.email,
+    status: data.user.status,
+    isDeleted: data.user.isDeleted,
+    emailVerified: data.user.emailVerified,
+  });
+
+  return { ...data, accessToken, refreshToken };
 };
 
 export const AuthService = { registerPatient, loginUser };
