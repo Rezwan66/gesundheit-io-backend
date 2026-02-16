@@ -8,6 +8,8 @@ import AppError from '../errorHelpers/AppError';
 import { deleteFileFromCloudinary } from '../config/cloudinary.config';
 
 export const globalErrorHandler = async (
+
+export const globalErrorHandler = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   err: any,
   req: Request,
@@ -36,6 +38,7 @@ export const globalErrorHandler = async (
   let stack: string | undefined = undefined;
 
   //@ Zod error pattern
+  //*
   // [
   //   {
   //     expected: 'string',

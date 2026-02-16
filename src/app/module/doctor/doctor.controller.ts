@@ -10,12 +10,16 @@ const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
 
   const result = await DoctorService.getAllDoctors(query as IQueryParams);
 
+const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
+  const result = await DoctorService.getAllDoctors();
+
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: 'Doctors fetched successfully',
     data: result.data,
     meta: result.meta,
+    data: result,
   });
 });
 

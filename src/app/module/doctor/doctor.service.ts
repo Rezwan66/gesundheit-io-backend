@@ -40,6 +40,11 @@ const getAllDoctors = async (query: IQueryParams) => {
     .include({
       user: true,
       // specialties: true,
+
+const getAllDoctors = async () => {
+  const doctors = await prisma.doctor.findMany({
+    include: {
+      user: true,
       specialties: {
         include: {
           specialty: true,
@@ -53,6 +58,9 @@ const getAllDoctors = async (query: IQueryParams) => {
     .execute();
 
   return result;
+    },
+  });
+  return doctors;
 };
 
 //TODO
