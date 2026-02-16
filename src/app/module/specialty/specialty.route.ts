@@ -13,6 +13,7 @@ router.post(
   // checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
   multerUpload.single('file'),
   validateRequest(SpecialtyValidation.createSpecialtyZodSchema),
+  checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
   SpecialtyController.createSpecialty,
 );
 router.get('/', SpecialtyController.getAllSpecialties);
