@@ -6,3 +6,7 @@ Generate:
 ```cmd
 pnpm dlx @better-auth/cli@latest generate --output ./prisma/schema/auth.prisma --config ./src/app/lib/auth.ts
 ```
+
+```cmd
+pnpm generate && pnpm migrate
+```
