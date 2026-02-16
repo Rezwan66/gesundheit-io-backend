@@ -10,11 +10,11 @@ import {
   PrismaWhereConditions,
 } from '../interfaces/query.interface';
 
+// T = Model Type
 export class QueryBuilder<
-  T, // T=> is the type of the main entity (e.g., Doctor)
-  TWhereInput = Record<string, unknown>, // TWhereInput => is the type for the query where input (e.g., id, email, etc)
-  TInclude = Record<string, unknown>, // TInclude => is the type for the include relations (e.g., user, specialties, etc)
-  //   TSelect = Record<string, unknown> // TSelect => is the type for the select fields (e.g., name, email, etc)
+  T,
+  TWhereInput = Record<string, unknown>,
+  TInclude = Record<string, unknown>,
 > {
   private query: PrismaFindManyArgs;
   private countQuery: PrismaCountArgs;
@@ -26,9 +26,9 @@ export class QueryBuilder<
   private selectFields: Record<string, boolean> | undefined;
 
   constructor(
-    private model: PrismaModelDelegate, // The Prisma model delegate (e.g., prisma.doctor)
-    private queryParams: IQueryParams, // The query parameters from the request
-    private config: IQueryConfig, // The configuration for searchable and filterable fields
+    private model: PrismaModelDelegate,
+    private queryParams: IQueryParams,
+    private config: IQueryConfig = {},
   ) {
     this.query = {
       where: {},
@@ -37,6 +37,7 @@ export class QueryBuilder<
       skip: 0,
       take: 10,
     };
+
     this.countQuery = {
       where: {},
     };
@@ -53,7 +54,6 @@ export class QueryBuilder<
             const parts = field.split('.');
 
             if (parts.length === 2) {
-              // Handle nested field
               const [relation, nestedField] = parts;
 
               const stringFilter: PrismaStringFilter = {
@@ -67,24 +67,25 @@ export class QueryBuilder<
                 },
               };
             } else if (parts.length === 3) {
-              // Handle deeply nested field
               const [relation, nestedRelation, nestedField] = parts;
+
               const stringFilter: PrismaStringFilter = {
                 contains: searchTerm,
                 mode: 'insensitive' as const,
               };
+
               return {
                 [relation]: {
-                  [nestedRelation]: {
-                    [nestedField]: stringFilter,
+                  some: {
+                    [nestedRelation]: {
+                      [nestedField]: stringFilter,
+                    },
                   },
                 },
               };
             }
-            // Add more levels of nesting if needed
           }
-
-          // Direct field
+          // direct field
           const stringFilter: PrismaStringFilter = {
             contains: searchTerm,
             mode: 'insensitive' as const,
@@ -97,6 +98,7 @@ export class QueryBuilder<
       );
 
       const whereConditions = this.query.where as PrismaWhereConditions;
+
       whereConditions.OR = searchConditions;
 
       const countWhereConditions = this.countQuery
@@ -106,10 +108,8 @@ export class QueryBuilder<
 
     return this;
   }
-
   // /doctors?searchTerm=john&page=1&sortBy=name&specialty=cardiology&appointmentFee[lt]=100 => {}
   // { specialty: 'cardiology', appointmentFee: { lt: '100' } }
-
   filter(): this {
     const { filterableFields } = this.config;
     const excludedField = [
@@ -337,7 +337,7 @@ export class QueryBuilder<
       return this;
     }
 
-    //if fields method is used, include method will be ignored to prevent conflict between select and include
+    //if fields method is, include method will be ignored to prevent conflict between select and include
     this.query.include = {
       ...(this.query.include as Record<string, unknown>),
       ...(relation as Record<string, unknown>),
