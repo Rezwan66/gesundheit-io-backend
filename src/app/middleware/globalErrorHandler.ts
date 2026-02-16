@@ -5,8 +5,9 @@ import z from 'zod';
 import { TErrorResponse, TErrorSources } from '../interfaces/error.interface';
 import { handleZodError } from '../errorHelpers/handleZodError';
 import AppError from '../errorHelpers/AppError';
+import { deleteFileFromCloudinary } from '../config/cloudinary.config';
 
-export const globalErrorHandler = (
+export const globalErrorHandler = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   err: any,
   req: Request,
@@ -19,6 +20,15 @@ export const globalErrorHandler = (
     console.log('Error from Global Error Handler', err);
   }
 
+  //# if there is a file in the request, delete it from cloudinary
+  if (req.file) {
+    await deleteFileFromCloudinary(req.file.path);
+  }
+  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+    const imageUrls = req.files.map(file => file.path);
+    await Promise.all(imageUrls.map(url => deleteFileFromCloudinary(url)));
+  }
+
   //# dynamic error code and message handling
   let errorSources: TErrorSources[] = [];
   let statusCode: number = status.INTERNAL_SERVER_ERROR;
@@ -26,7 +36,6 @@ export const globalErrorHandler = (
   let stack: string | undefined = undefined;
 
   //@ Zod error pattern
-  //*
   // [
   //   {
   //     expected: 'string',
