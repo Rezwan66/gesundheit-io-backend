@@ -1,29 +1,36 @@
 import status from 'http-status';
+import { Doctor, Prisma } from '../../../generated/prisma/client';
 import { UserStatus } from '../../../generated/prisma/enums';
 import AppError from '../../errorHelpers/AppError';
-import { prisma } from '../../lib/prisma';
-import { IUpdateDoctorPayload } from './doctor.interface';
 import { IQueryParams } from '../../interfaces/query.interface';
+import { prisma } from '../../lib/prisma';
 import { QueryBuilder } from '../../utils/QueryBuilder';
 import {
   doctorFilterableFields,
   doctorIncludeConfig,
   doctorSearchableFields,
 } from './doctor.constant';
-import { Doctor, Prisma } from '../../../generated/prisma/client';
+import { IUpdateDoctorPayload } from './doctor.interface';
 
+// /doctors?specialty=cardiology&include=doctorSchedules,appointments
 const getAllDoctors = async (query: IQueryParams) => {
   // const doctors = await prisma.doctor.findMany({
-  //   include: {
-  //     user: true,
-  //     specialties: {
-  //       include: {
-  //         specialty: true,
-  //       },
+  //     where: {
+  //         isDeleted: false,
   //     },
-  //   },
-  // });
+  //     include: {
+  //         user: true,
+  //         specialties: {
+  //             include: {
+  //                 specialty: true
+  //             }
+  //         }
+  //     }
+  // })
+
+  // // const query = new QueryBuilder().paginate().search().filter();
   // return doctors;
+
   const queryBuilder = new QueryBuilder<
     Doctor,
     Prisma.DoctorWhereInput,
@@ -36,15 +43,12 @@ const getAllDoctors = async (query: IQueryParams) => {
   const result = await queryBuilder
     .search()
     .filter()
-    .where({ isDeleted: false })
+    .where({
+      isDeleted: false,
+    })
     .include({
       user: true,
       // specialties: true,
-
-const getAllDoctors = async () => {
-  const doctors = await prisma.doctor.findMany({
-    include: {
-      user: true,
       specialties: {
         include: {
           specialty: true,
@@ -57,16 +61,9 @@ const getAllDoctors = async () => {
     .fields()
     .execute();
 
+  console.log(result);
   return result;
-    },
-  });
-  return doctors;
 };
-
-//TODO
-// const getDoctorById = async (id: string) => {};
-// const updateDoctor = async (id: string, payload: IUpdateDoctorPayload) => {};
-// const deleteDoctor = async (id: string) => {}; //soft delete
 
 const getDoctorById = async (id: string) => {
   const doctor = await prisma.doctor.findUnique({

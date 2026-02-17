@@ -1,24 +1,18 @@
 import status from 'http-status';
+import { JwtPayload } from 'jsonwebtoken';
 import { UserStatus } from '../../../generated/prisma/enums';
+import { envVars } from '../../config/env';
 import AppError from '../../errorHelpers/AppError';
+import { IRequestUser } from '../../interfaces/requestUser.interface';
 import { auth } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
-import { tokenUtils } from '../../utils/token';
-import { IRequestUser } from '../../interfaces/requestUser.interface';
 import { jwtUtils } from '../../utils/jwt';
-import { envVars } from '../../config/env';
-import { JwtPayload } from 'jsonwebtoken';
+import { tokenUtils } from '../../utils/token';
 import {
   IChangePasswordPayload,
   ILoginUserPayload,
   IRegisterPatientPayload,
 } from './auth.interface';
-
-interface IRegisterPatientPayload {
-  name: string;
-  email: string;
-  password: string;
-}
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
   const { name, email, password } = payload;
@@ -28,18 +22,19 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
       name,
       email,
       password,
-      //# default values:
-      //   role: Role.PATIENT,
-      //   needPasswordChange: false,
+      //default values
+      // needsPasswordChange: false,
+      // role: Role.PATIENT
     },
   });
 
   if (!data.user) {
-    // throw new Error('Failed to register patient');
+    // throw new Error("Failed to register patient");
     throw new AppError(status.BAD_REQUEST, 'Failed to register patient');
   }
+
+  //TODO : Create Patient Profile In Transaction After Sign Up Of Patient In USer Model
   try {
-    //TODO: create patient profile in transaction after sign up of patient in user model
     const patient = await prisma.$transaction(async tx => {
       const patientTx = await tx.patient.create({
         data: {
@@ -48,6 +43,7 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
           email: payload.email,
         },
       });
+
       return patientTx;
     });
 
@@ -71,30 +67,14 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
       emailVerified: data.user.emailVerified,
     });
 
-
-    const accessToken = tokenUtils.getAccessToken({
-      userId: data.user.id,
-      role: data.user.role,
-      name: data.user.name,
-      email: data.user.email,
-      status: data.user.status,
-      isDeleted: data.user.isDeleted,
-      emailVerified: data.user.emailVerified,
-    });
-
-    const refreshToken = tokenUtils.getRefreshToken({
-      userId: data.user.id,
-      role: data.user.role,
-      name: data.user.name,
-      email: data.user.email,
-      status: data.user.status,
-      isDeleted: data.user.isDeleted,
-      emailVerified: data.user.emailVerified,
-    });
-
-    return { ...data, accessToken, refreshToken, patient };
+    return {
+      ...data,
+      accessToken,
+      refreshToken,
+      patient,
+    };
   } catch (error) {
-    console.log('Transaction error :', error);
+    console.log('Transaction error : ', error);
     await prisma.user.delete({
       where: {
         id: data.user.id,
@@ -103,11 +83,6 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
     throw error;
   }
 };
-
-interface ILoginUserPayload {
-  email: string;
-  password: string;
-}
 
 const loginUser = async (payload: ILoginUserPayload) => {
   const { email, password } = payload;
@@ -120,18 +95,13 @@ const loginUser = async (payload: ILoginUserPayload) => {
   });
 
   if (data.user.status === UserStatus.BLOCKED) {
-    // throw new Error('User is blocked');
     throw new AppError(status.FORBIDDEN, 'User is blocked');
   }
 
   if (data.user.isDeleted || data.user.status === UserStatus.DELETED) {
-    // throw new Error('User is deleted');
     throw new AppError(status.NOT_FOUND, 'User is deleted');
   }
 
-  // Token-related logic
-  // Access token has a short expiry time (e.g., 1 day) and is used for authenticating API requests.
-  // Refresh token has a longer expiry time (e.g., 7 days) and is used to obtain new access tokens without requiring the user to log in again.
   const accessToken = tokenUtils.getAccessToken({
     userId: data.user.id,
     role: data.user.role,
@@ -152,11 +122,15 @@ const loginUser = async (payload: ILoginUserPayload) => {
     emailVerified: data.user.emailVerified,
   });
 
-  return { ...data, accessToken, refreshToken };
+  return {
+    ...data,
+    accessToken,
+    refreshToken,
+  };
 };
 
 const getMe = async (user: IRequestUser) => {
-  const isUserExist = await prisma.user.findUnique({
+  const isUserExists = await prisma.user.findUnique({
     where: {
       id: user.userId,
     },
@@ -182,11 +156,11 @@ const getMe = async (user: IRequestUser) => {
     },
   });
 
-  if (!isUserExist) {
+  if (!isUserExists) {
     throw new AppError(status.NOT_FOUND, 'User not found');
   }
 
-  return isUserExist;
+  return isUserExists;
 };
 
 const getNewToken = async (refreshToken: string, sessionToken: string) => {
@@ -207,9 +181,11 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
     refreshToken,
     envVars.REFRESH_TOKEN_SECRET,
   );
+
   if (!verifiedRefreshToken.success && verifiedRefreshToken.error) {
     throw new AppError(status.UNAUTHORIZED, 'Invalid refresh token');
   }
+
   const data = verifiedRefreshToken.data as JwtPayload;
 
   const newAccessToken = tokenUtils.getAccessToken({
@@ -232,14 +208,13 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
     emailVerified: data.emailVerified,
   });
 
-  // Increase validity of better auth session token
   const { token } = await prisma.session.update({
     where: {
       token: sessionToken,
     },
     data: {
-      token: sessionToken, // Keep the same session token
-      expiresAt: new Date(Date.now() + 60 * 60 * 60 * 24 * 1000), // Extend session by 1 day
+      token: sessionToken,
+      expiresAt: new Date(Date.now() + 60 * 60 * 60 * 24 * 1000),
       updatedAt: new Date(),
     },
   });
@@ -249,30 +224,6 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
     refreshToken: newRefreshToken,
     sessionToken: token,
   };
-  // Token-related logic
-  // Access token has a short expiry time (e.g., 1 day) and is used for authenticating API requests.
-  // Refresh token has a longer expiry time (e.g., 7 days) and is used to obtain new access tokens without requiring the user to log in again.
-  const accessToken = tokenUtils.getAccessToken({
-    userId: data.user.id,
-    role: data.user.role,
-    name: data.user.name,
-    email: data.user.email,
-    status: data.user.status,
-    isDeleted: data.user.isDeleted,
-    emailVerified: data.user.emailVerified,
-  });
-
-  const refreshToken = tokenUtils.getRefreshToken({
-    userId: data.user.id,
-    role: data.user.role,
-    name: data.user.name,
-    email: data.user.email,
-    status: data.user.status,
-    isDeleted: data.user.isDeleted,
-    emailVerified: data.user.emailVerified,
-  });
-
-  return { ...data, accessToken, refreshToken };
 };
 
 const changePassword = async (
@@ -284,6 +235,7 @@ const changePassword = async (
       Authorization: `Bearer ${sessionToken}`,
     }),
   });
+
   if (!session) {
     throw new AppError(status.UNAUTHORIZED, 'Invalid session token');
   }
@@ -301,15 +253,17 @@ const changePassword = async (
     }),
   });
 
-  // Only for first time user login when needPasswordChange is true
   if (session.user.needPasswordChange) {
     await prisma.user.update({
-      where: { id: session.user.id },
-      data: { needPasswordChange: false },
+      where: {
+        id: session.user.id,
+      },
+      data: {
+        needPasswordChange: false,
+      },
     });
   }
 
-  // Need to set new tokens in cookies after password change as all other sessions are revoked
   const accessToken = tokenUtils.getAccessToken({
     userId: session.user.id,
     role: session.user.role,
@@ -330,45 +284,66 @@ const changePassword = async (
     emailVerified: session.user.emailVerified,
   });
 
-  return { ...result, accessToken, refreshToken };
+  return {
+    ...result,
+    accessToken,
+    refreshToken,
+  };
 };
 
 const logoutUser = async (sessionToken: string) => {
-  return await auth.api.signOut({
+  const result = await auth.api.signOut({
     headers: new Headers({
       Authorization: `Bearer ${sessionToken}`,
     }),
   });
+
+  return result;
 };
 
 const verifyEmail = async (email: string, otp: string) => {
   const result = await auth.api.verifyEmailOTP({
-    body: { email, otp },
+    body: {
+      email,
+      otp,
+    },
   });
 
   if (result.status && !result.user.emailVerified) {
     await prisma.user.update({
-      where: { email },
-      data: { emailVerified: true },
+      where: {
+        email,
+      },
+      data: {
+        emailVerified: true,
+      },
     });
   }
 };
 
 const forgetPassword = async (email: string) => {
   const isUserExist = await prisma.user.findUnique({
-    where: { email },
+    where: {
+      email,
+    },
   });
+
   if (!isUserExist) {
-    throw new AppError(status.NOT_FOUND, 'User with this email does not exist');
+    throw new AppError(status.NOT_FOUND, 'User not found');
   }
+
   if (!isUserExist.emailVerified) {
-    throw new AppError(status.BAD_REQUEST, 'Email is not verified');
+    throw new AppError(status.BAD_REQUEST, 'Email not verified');
   }
+
   if (isUserExist.isDeleted || isUserExist.status === UserStatus.DELETED) {
-    throw new AppError(status.BAD_REQUEST, 'User is deleted');
+    throw new AppError(status.NOT_FOUND, 'User not found');
   }
+
   await auth.api.requestPasswordResetEmailOTP({
-    body: { email },
+    body: {
+      email,
+    },
   });
 };
 
@@ -378,27 +353,39 @@ const resetPassword = async (
   newPassword: string,
 ) => {
   const isUserExist = await prisma.user.findUnique({
-    where: { email },
+    where: {
+      email,
+    },
   });
+
   if (!isUserExist) {
-    throw new AppError(status.NOT_FOUND, 'User with this email does not exist');
+    throw new AppError(status.NOT_FOUND, 'User not found');
   }
+
   if (!isUserExist.emailVerified) {
-    throw new AppError(status.BAD_REQUEST, 'Email is not verified');
+    throw new AppError(status.BAD_REQUEST, 'Email not verified');
   }
+
   if (isUserExist.isDeleted || isUserExist.status === UserStatus.DELETED) {
-    throw new AppError(status.BAD_REQUEST, 'User is deleted');
+    throw new AppError(status.NOT_FOUND, 'User not found');
   }
 
   await auth.api.resetPasswordEmailOTP({
-    body: { email, otp, password: newPassword },
+    body: {
+      email,
+      otp,
+      password: newPassword,
+    },
   });
 
-  // Only for first time user login when needPasswordChange is true
   if (isUserExist.needPasswordChange) {
     await prisma.user.update({
-      where: { id: isUserExist.id },
-      data: { needPasswordChange: false },
+      where: {
+        id: isUserExist.id,
+      },
+      data: {
+        needPasswordChange: false,
+      },
     });
   }
 
@@ -412,8 +399,11 @@ const resetPassword = async (
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const googleLoginSuccess = async (session: Record<string, any>) => {
   const isPatientExists = await prisma.patient.findUnique({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+    },
   });
+
   if (!isPatientExists) {
     await prisma.patient.create({
       data: {
@@ -429,13 +419,17 @@ const googleLoginSuccess = async (session: Record<string, any>) => {
     role: session.user.role,
     name: session.user.name,
   });
+
   const refreshToken = tokenUtils.getRefreshToken({
     userId: session.user.id,
     role: session.user.role,
     name: session.user.name,
   });
 
-  return { accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+  };
 };
 
 export const AuthService = {
