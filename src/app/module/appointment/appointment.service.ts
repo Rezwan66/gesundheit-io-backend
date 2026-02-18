@@ -85,7 +85,7 @@ const bookAppointment = async (
       line_items: [
         {
           price_data: {
-            currency: 'bdt',
+            currency: 'eur',
             product_data: {
               name: `Appointment with Dr. ${doctorData.name}`,
             },
@@ -384,7 +384,7 @@ const initiatePayment = async (appointmentId: string, user: IRequestUser) => {
     line_items: [
       {
         price_data: {
-          currency: 'bdt',
+          currency: 'eur',
           product_data: {
             name: `Appointment with Dr. ${appointmentData.doctor.name}`,
           },
