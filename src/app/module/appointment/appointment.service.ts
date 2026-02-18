@@ -89,7 +89,7 @@ const bookAppointment = async (
             product_data: {
               name: `Appointment with Dr. ${doctorData.name}`,
             },
-            unit_amount: doctorData.appointmentFee * 0.84,
+            unit_amount: doctorData.appointmentFee * 100,
           },
           quantity: 1,
         },
@@ -388,7 +388,7 @@ const initiatePayment = async (appointmentId: string, user: IRequestUser) => {
           product_data: {
             name: `Appointment with Dr. ${appointmentData.doctor.name}`,
           },
-          unit_amount: appointmentData.doctor.appointmentFee * 0.84,
+          unit_amount: appointmentData.doctor.appointmentFee * 100,
         },
         quantity: 1,
       },

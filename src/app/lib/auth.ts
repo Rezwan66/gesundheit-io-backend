@@ -80,12 +80,29 @@ export const auth = betterAuth({
         if (type === 'email-verification') {
           const user = await prisma.user.findUnique({ where: { email } });
 
-          if (user && !user.emailVerified) {
+          // const isItFirstSuperAdmin = (await prisma.admin.count()) === 1;
+          if (!user) {
+            return console.log(
+              `User with email ${email} not found. Cannot send verification OTP.`,
+            );
+          }
+          if (user && user.role === Role.SUPER_ADMIN) {
+            return console.log(
+              `User with email ${email} is a super admin. Skipping sending verification OTP.`,
+            );
+          }
+
+          if (
+            user &&
+            !user.emailVerified
+            // || !isItFirstSuperAdmin
+            // || user?.role !== Role.SUPER_ADMIN
+          ) {
             sendEmail({
               to: email,
               subject: 'Verify your email',
               templateName: 'otp',
-              templateData: { name: user.name, otp },
+              templateData: { name: user?.name, otp },
             });
           }
         } else if (type === 'forget-password') {
