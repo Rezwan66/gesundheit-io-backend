@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express, { Application, Request, Response } from 'express';
 import { prisma } from './app/lib/prisma';
 import { IndexRoutes } from './app/routes';
@@ -10,12 +11,21 @@ import path from 'path';
 import cors from 'cors';
 import { envVars } from './app/config/env';
 import qs from 'qs';
+import { PaymentController } from './app/module/payment/payment.controller';
+import cron from 'node-cron';
+import { AppointmentService } from './app/module/appointment/appointment.service';
 
 const app: Application = express();
 app.set('query parser', (str: string) => qs.parse(str));
 
 app.set('view engine', 'ejs'); // Set EJS as the view engine
 app.set('views', path.resolve(process.cwd(), `src/app/templates/`)); // Set the views directory
+
+app.post(
+  '/webhook',
+  express.raw({ type: 'application/json' }),
+  PaymentController.handleStripeWebhookEvent,
+);
 
 // Enable CORS for all routes (you can customize this as needed)
 app.use(
@@ -61,6 +71,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // Middleware to parse cookies
 app.use(cookieParser());
+
+cron.schedule('*/25 * * * *', async () => {
+  try {
+    console.log('Running cron job to cancel unpaid appointments...');
+    await AppointmentService.cancelUnpaidAppointments();
+  } catch (error: any) {
+    console.error(
+      'Error occurred while canceling unpaid appointments:',
+      error.message,
+    );
+  }
+});
 
 // All routes
 app.use('/api/v1', IndexRoutes);
