@@ -59,7 +59,7 @@ const deleteAdmin = catchAsync(async (req: Request, res: Response) => {
 const changeUserStatus = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   const payload = req.body;
-  const result = await AdminService.changeUserStatus(user, payload);
+  const result = await AdminService.changeUserStatus(user!, payload);
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
@@ -71,7 +71,7 @@ const changeUserStatus = catchAsync(async (req: Request, res: Response) => {
 const changeUserRole = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   const payload = req.body;
-  const result = await AdminService.changeUserRole(user, payload);
+  const result = await AdminService.changeUserRole(user!, payload);
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
