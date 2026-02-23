@@ -82,14 +82,10 @@ export const auth = betterAuth({
 
           // const isItFirstSuperAdmin = (await prisma.admin.count()) === 1;
           if (!user) {
-            return console.log(
-              `User with email ${email} not found. Cannot send verification OTP.`,
-            );
+            return console.log(`User with email ${email} not found. Cannot send verification OTP.`);
           }
           if (user && user.role === Role.SUPER_ADMIN) {
-            return console.log(
-              `User with email ${email} is a super admin. Skipping sending verification OTP.`,
-            );
+            return console.log(`User with email ${email} is a super admin. Skipping sending verification OTP.`);
           }
 
           if (
@@ -136,10 +132,7 @@ export const auth = betterAuth({
     signIn: `${envVars.BETTER_AUTH_URL}/api/v1/auth/google/success`,
   },
 
-  trustedOrigins: [
-    envVars.BETTER_AUTH_URL || 'http://localhost:5000',
-    envVars.FRONTEND_URL,
-  ],
+  trustedOrigins: [envVars.BETTER_AUTH_URL || 'http://localhost:5000', envVars.FRONTEND_URL],
   // trustedOrigins: [process.env.BETTER_AUTH_URL || 'http://localhost:5000'],
 
   advanced: {
