@@ -177,10 +177,7 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
     throw new AppError(status.UNAUTHORIZED, 'Invalid session token');
   }
 
-  const verifiedRefreshToken = jwtUtils.verifyToken(
-    refreshToken,
-    envVars.REFRESH_TOKEN_SECRET,
-  );
+  const verifiedRefreshToken = jwtUtils.verifyToken(refreshToken, envVars.REFRESH_TOKEN_SECRET);
 
   if (!verifiedRefreshToken.success && verifiedRefreshToken.error) {
     throw new AppError(status.UNAUTHORIZED, 'Invalid refresh token');
@@ -226,10 +223,7 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
   };
 };
 
-const changePassword = async (
-  payload: IChangePasswordPayload,
-  sessionToken: string,
-) => {
+const changePassword = async (payload: IChangePasswordPayload, sessionToken: string) => {
   const session = await auth.api.getSession({
     headers: new Headers({
       Authorization: `Bearer ${sessionToken}`,
@@ -347,11 +341,7 @@ const forgetPassword = async (email: string) => {
   });
 };
 
-const resetPassword = async (
-  email: string,
-  otp: string,
-  newPassword: string,
-) => {
+const resetPassword = async (email: string, otp: string, newPassword: string) => {
   const isUserExist = await prisma.user.findUnique({
     where: {
       email,
