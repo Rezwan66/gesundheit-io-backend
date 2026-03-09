@@ -25,10 +25,7 @@ export const doctorFilterableFields = [
 ];
 
 export const doctorIncludeConfig: Partial<
-  Record<
-    keyof Prisma.DoctorInclude,
-    Prisma.DoctorInclude[keyof Prisma.DoctorInclude]
-  >
+  Record<keyof Prisma.DoctorInclude, Prisma.DoctorInclude[keyof Prisma.DoctorInclude]>
 > = {
   user: true,
   specialties: {
