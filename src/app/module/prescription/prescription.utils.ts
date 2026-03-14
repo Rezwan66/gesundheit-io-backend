@@ -13,7 +13,9 @@ interface PrescriptionData {
   createdAt: Date;
 }
 
-export const generatePrescriptionPDF = async (prescriptionData: PrescriptionData): Promise<Buffer> => {
+export const generatePrescriptionPDF = async (
+  prescriptionData: PrescriptionData,
+): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -41,7 +43,7 @@ export const generatePrescriptionPDF = async (prescriptionData: PrescriptionData
       });
 
       doc.moveDown(0.5);
-      doc.fontSize(10).font('Helvetica').text('GESUNDHEIT-IO', {
+      doc.fontSize(10).font('Helvetica').text('GESUNDHEIT-IO Services', {
         align: 'center',
       });
       doc.text('Your Health, Our Priority', { align: 'center' });
@@ -79,7 +81,9 @@ export const generatePrescriptionPDF = async (prescriptionData: PrescriptionData
         .fontSize(10)
         .font('Helvetica')
         .text(`Prescription ID: ${prescriptionData.prescriptionId}`)
-        .text(`Appointment Date: ${new Date(prescriptionData.appointmentDate).toLocaleDateString()}`)
+        .text(
+          `Appointment Date: ${new Date(prescriptionData.appointmentDate).toLocaleDateString()}`,
+        )
         .text(`Issued Date: ${new Date(prescriptionData.createdAt).toLocaleDateString()}`);
 
       if (prescriptionData.followUpDate) {

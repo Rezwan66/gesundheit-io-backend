@@ -39,7 +39,7 @@ export const generateInvoicePdf = async (data: InvoiceData): Promise<Buffer> => 
       });
 
       doc.moveDown(0.5);
-      doc.fontSize(10).font('Helvetica').text('GESUNDHEIT-IO', {
+      doc.fontSize(10).font('Helvetica').text('GESUNDHEIT-IO Services', {
         align: 'center',
       });
       doc.text('Your Health, Our Priority', { align: 'center' });
@@ -64,7 +64,11 @@ export const generateInvoicePdf = async (data: InvoiceData): Promise<Buffer> => 
 
       // Patient Information
       doc.fontSize(11).font('Helvetica-Bold').text('Patient Information');
-      doc.fontSize(10).font('Helvetica').text(`Name: ${data.patientName}`).text(`Email: ${data.patientEmail}`);
+      doc
+        .fontSize(10)
+        .font('Helvetica')
+        .text(`Name: ${data.patientName}`)
+        .text(`Email: ${data.patientEmail}`);
 
       doc.moveDown(0.8);
 
@@ -115,7 +119,7 @@ export const generateInvoicePdf = async (data: InvoiceData): Promise<Buffer> => 
       const amountY = doc.y;
       doc.fontSize(10).font('Helvetica');
       doc.text('Consultation Fee', col1X, amountY);
-      doc.text(`${data.amount.toFixed(2)} EURO`, col2X, amountY, { align: 'right' });
+      doc.text(`${data.amount.toFixed(2)} BDT`, col2X, amountY, { align: 'right' });
 
       doc.moveDown(0.8);
 
@@ -123,7 +127,7 @@ export const generateInvoicePdf = async (data: InvoiceData): Promise<Buffer> => 
       const totalY = doc.y;
       doc.fontSize(11).font('Helvetica-Bold');
       doc.text('Total Amount', col1X, totalY);
-      doc.text(`${data.amount.toFixed(2)} EURO`, col2X, totalY, { align: 'right' });
+      doc.text(`${data.amount.toFixed(2)} BDT`, col2X, totalY, { align: 'right' });
 
       // Separator line
       doc
@@ -137,11 +141,14 @@ export const generateInvoicePdf = async (data: InvoiceData): Promise<Buffer> => 
       doc
         .fontSize(9)
         .font('Helvetica')
-        .text('Thank you for choosing GESUNDHEIT-IO. This is an electronically generated invoice.', {
-          align: 'center',
-        });
+        .text(
+          'Thank you for choosing GESUNDHEIT-IO. This is an electronically generated invoice.',
+          {
+            align: 'center',
+          },
+        );
 
-      doc.text('If you have any questions, please contact us at support@gesundheit-io.com', {
+      doc.text('If you have any questions, please contact us at support@ph-healthcare.com', {
         align: 'center',
       });
 

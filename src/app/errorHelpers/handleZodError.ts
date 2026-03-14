@@ -1,23 +1,23 @@
-import z from 'zod';
-import { TErrorResponse, TErrorSources } from '../interfaces/error.interface';
-import status from 'http-status';
+import status from "http-status";
+import z from "zod";
+import { TErrorResponse, TErrorSources } from "../interfaces/error.interface";
 
 export const handleZodError = (err: z.ZodError): TErrorResponse => {
-  const errorSources: TErrorSources[] = [];
-  const statusCode = status.BAD_REQUEST;
-  const message = 'Zod Validation Error';
+    const statusCode = status.BAD_REQUEST;
+    const message = "Zod Validation Error";
+    const errorSources: TErrorSources[] = [];
 
-  err.issues.forEach(issue => {
-    errorSources.push({
-      path: issue.path.join(' => '),
-      message: issue.message,
-    });
-  });
+    err.issues.forEach(issue => {
+        errorSources.push({
+            path: issue.path.join(" => "),
+            message: issue.message
+        })
+    })
 
-  return {
-    success: false,
-    message,
-    errorSources,
-    statusCode,
-  };
-};
+    return {
+        success: false,
+        message,
+        errorSources,
+        statusCode,
+    }
+}

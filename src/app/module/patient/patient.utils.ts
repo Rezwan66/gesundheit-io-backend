@@ -1,11 +1,11 @@
-import { isValid, parse } from 'date-fns';
+import { isValid, parse } from "date-fns";
 
 export const convertToDateTime = (dateString: string | undefined) => {
-  if (!dateString) return undefined;
+    if(!dateString) return undefined;
 
-  const date = parse(dateString, 'yyyy-MM-dd', new Date());
+    const date = parse(dateString, "yyyy-MM-dd", new Date());
+    
+    if(!isValid(date)) return undefined;
 
-  if (!isValid(date)) return undefined;
-
-  return date;
-};
+    return date;
+}
